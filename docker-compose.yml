@@ -1,0 +1,22 @@
+services:
+  sound-bath:
+    image: nginx:alpine
+    container_name: sound-bath
+    restart: unless-stopped
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sound-bath.rule=Host(`apps.aloha.university`) && PathPrefix(`/sound-bath`)"
+      - "traefik.http.routers.sound-bath.entrypoints=websecure"
+      - "traefik.http.routers.sound-bath.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.sound-bath.middlewares=sound-bath-strip"
+      - "traefik.http.middlewares.sound-bath-strip.stripprefix.prefixes=/sound-bath"
+      - "traefik.http.services.sound-bath.loadbalancer.server.port=80"
+
+networks:
+  web:
+    external: true
