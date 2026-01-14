@@ -13,6 +13,9 @@ function initializeApp() {
     const startBtn = document.getElementById('startAudioBtn');
 
     startBtn.addEventListener('click', async () => {
+        startBtn.disabled = true;
+        startBtn.textContent = 'Initializing...';
+
         const success = await window.audioEngine.initialize();
         if (success) {
             audioStarter.classList.add('hidden');
@@ -20,6 +23,10 @@ function initializeApp() {
             initializeVisualizer();
             initializeControls();
             createParticles();
+        } else {
+            startBtn.disabled = false;
+            startBtn.textContent = 'Retry - Audio Failed';
+            console.error('Audio engine failed to initialize. Please check browser permissions.');
         }
     });
 }
@@ -33,6 +40,16 @@ function initializeInstruments() {
     setupPlayStyleButtons();
 }
 
+// Audio durations for visual sync
+const AUDIO_DURATIONS = {
+    crystal: 8000,
+    tibetan: 10000,
+    gong: 15000,
+    panflute: 4000,
+    handpan: 5000,
+    didgeridoo: 8000
+};
+
 // Crystal Singing Bowls
 function renderCrystalBowls() {
     const container = document.getElementById('crystalBowls');
@@ -44,6 +61,11 @@ function renderCrystalBowls() {
         bowlEl.dataset.index = index;
         bowlEl.style.setProperty('--bowl-size', `${bowl.size}px`);
         bowlEl.style.setProperty('--chakra-color', bowl.color);
+
+        // Accessibility
+        bowlEl.setAttribute('role', 'button');
+        bowlEl.setAttribute('tabindex', '0');
+        bowlEl.setAttribute('aria-label', `Crystal singing bowl, note ${bowl.note}, ${bowl.chakra} chakra, ${bowl.frequency} hertz`);
 
         bowlEl.innerHTML = `
             <div class="crystal-bowl-body">
@@ -58,6 +80,12 @@ function renderCrystalBowls() {
             e.preventDefault();
             playCrystalBowl(index);
         });
+        bowlEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playCrystalBowl(index);
+            }
+        });
 
         container.appendChild(bowlEl);
     });
@@ -65,15 +93,21 @@ function renderCrystalBowls() {
 
 function playCrystalBowl(index) {
     const bowl = INSTRUMENTS.crystalBowls[index];
+    if (!bowl) return;
+
     const style = playStyles.crystal;
-    const bowlEl = document.querySelectorAll('.crystal-bowl')[index];
+    const bowlElements = document.querySelectorAll('.crystal-bowl');
+    const bowlEl = bowlElements[index];
+    if (!bowlEl) return;
 
     bowlEl.classList.add('playing');
+    bowlEl.setAttribute('aria-pressed', 'true');
     window.audioEngine.playCrystalBowl(bowl.frequency, style);
 
     setTimeout(() => {
         bowlEl.classList.remove('playing');
-    }, 2000);
+        bowlEl.setAttribute('aria-pressed', 'false');
+    }, AUDIO_DURATIONS.crystal);
 }
 
 // Tibetan Singing Bowls
@@ -86,6 +120,11 @@ function renderTibetanBowls() {
         bowlEl.className = 'tibetan-bowl';
         bowlEl.dataset.index = index;
         bowlEl.style.setProperty('--bowl-size', `${bowl.size}px`);
+
+        // Accessibility
+        bowlEl.setAttribute('role', 'button');
+        bowlEl.setAttribute('tabindex', '0');
+        bowlEl.setAttribute('aria-label', `Tibetan singing bowl, ${bowl.name} size, ${bowl.frequency} hertz`);
 
         bowlEl.innerHTML = `
             <div class="tibetan-bowl-body">
@@ -100,6 +139,12 @@ function renderTibetanBowls() {
             e.preventDefault();
             playTibetanBowl(index);
         });
+        bowlEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playTibetanBowl(index);
+            }
+        });
 
         container.appendChild(bowlEl);
     });
@@ -107,15 +152,21 @@ function renderTibetanBowls() {
 
 function playTibetanBowl(index) {
     const bowl = INSTRUMENTS.tibetanBowls[index];
+    if (!bowl) return;
+
     const style = playStyles.tibetan;
-    const bowlEl = document.querySelectorAll('.tibetan-bowl')[index];
+    const bowlElements = document.querySelectorAll('.tibetan-bowl');
+    const bowlEl = bowlElements[index];
+    if (!bowlEl) return;
 
     bowlEl.classList.add('playing');
+    bowlEl.setAttribute('aria-pressed', 'true');
     window.audioEngine.playTibetanBowl(bowl.frequency, style);
 
     setTimeout(() => {
         bowlEl.classList.remove('playing');
-    }, 3000);
+        bowlEl.setAttribute('aria-pressed', 'false');
+    }, AUDIO_DURATIONS.tibetan);
 }
 
 // Gongs
@@ -123,68 +174,131 @@ function setupGongs() {
     const chauGong = document.querySelector('.chau-gong');
     const symphGong = document.querySelector('.symph-gong');
 
-    chauGong.addEventListener('mousedown', () => playGong('chauGong'));
-    chauGong.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        playGong('chauGong');
-    });
+    if (chauGong) {
+        chauGong.setAttribute('role', 'button');
+        chauGong.setAttribute('tabindex', '0');
+        chauGong.setAttribute('aria-label', 'Chau Gong, 40 inch wind gong, 50 hertz');
 
-    symphGong.addEventListener('mousedown', () => playGong('symphGong'));
-    symphGong.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        playGong('symphGong');
-    });
+        chauGong.addEventListener('mousedown', () => playGong('chauGong'));
+        chauGong.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            playGong('chauGong');
+        });
+        chauGong.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playGong('chauGong');
+            }
+        });
+    }
+
+    if (symphGong) {
+        symphGong.setAttribute('role', 'button');
+        symphGong.setAttribute('tabindex', '0');
+        symphGong.setAttribute('aria-label', 'Symphonic Gong, 36 inch Paiste style, 65 hertz');
+
+        symphGong.addEventListener('mousedown', () => playGong('symphGong'));
+        symphGong.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            playGong('symphGong');
+        });
+        symphGong.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playGong('symphGong');
+            }
+        });
+    }
 }
 
 function playGong(gongType) {
-    const gong = INSTRUMENTS.gongs[gongType];
+    const gong = INSTRUMENTS.gongs?.[gongType];
+    if (!gong) return;
+
     const style = playStyles.gong;
     const gongEl = document.querySelector(`.${gongType === 'chauGong' ? 'chau-gong' : 'symph-gong'}`);
+    if (!gongEl) return;
 
     gongEl.classList.add('playing');
+    gongEl.setAttribute('aria-pressed', 'true');
     window.audioEngine.playGong(gong.frequency, style);
 
     setTimeout(() => {
         gongEl.classList.remove('playing');
-    }, 5000);
+        gongEl.setAttribute('aria-pressed', 'false');
+    }, AUDIO_DURATIONS.gong);
 }
 
 // Wind Instruments
 function setupWindInstruments() {
     // Didgeridoo
     const didgeridoo = document.querySelector('.didgeridoo');
-    let didgeHoldTimeout;
 
-    didgeridoo.addEventListener('mousedown', () => {
-        didgeridoo.classList.add('playing');
-        playDidgeridoo();
-    });
+    if (didgeridoo) {
+        didgeridoo.setAttribute('role', 'button');
+        didgeridoo.setAttribute('tabindex', '0');
+        didgeridoo.setAttribute('aria-label', 'Didgeridoo, eucalyptus, key of D, 65 hertz');
 
-    didgeridoo.addEventListener('mouseup', () => {
-        didgeridoo.classList.remove('playing');
-    });
+        didgeridoo.addEventListener('mousedown', () => {
+            didgeridoo.classList.add('playing');
+            didgeridoo.setAttribute('aria-pressed', 'true');
+            playDidgeridoo();
+        });
 
-    didgeridoo.addEventListener('mouseleave', () => {
-        didgeridoo.classList.remove('playing');
-    });
+        didgeridoo.addEventListener('mouseup', () => {
+            didgeridoo.classList.remove('playing');
+            didgeridoo.setAttribute('aria-pressed', 'false');
+        });
 
-    didgeridoo.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        didgeridoo.classList.add('playing');
-        playDidgeridoo();
-    });
+        didgeridoo.addEventListener('mouseleave', () => {
+            didgeridoo.classList.remove('playing');
+            didgeridoo.setAttribute('aria-pressed', 'false');
+        });
 
-    didgeridoo.addEventListener('touchend', () => {
-        didgeridoo.classList.remove('playing');
-    });
+        didgeridoo.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            didgeridoo.classList.add('playing');
+            didgeridoo.setAttribute('aria-pressed', 'true');
+            playDidgeridoo();
+        });
+
+        didgeridoo.addEventListener('touchend', () => {
+            didgeridoo.classList.remove('playing');
+            didgeridoo.setAttribute('aria-pressed', 'false');
+        });
+
+        didgeridoo.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                didgeridoo.classList.add('playing');
+                didgeridoo.setAttribute('aria-pressed', 'true');
+                playDidgeridoo();
+                setTimeout(() => {
+                    didgeridoo.classList.remove('playing');
+                    didgeridoo.setAttribute('aria-pressed', 'false');
+                }, AUDIO_DURATIONS.didgeridoo);
+            }
+        });
+    }
 
     // Pan Flute pipes
     const pipes = document.querySelectorAll('.pipe');
     pipes.forEach((pipe, index) => {
+        const note = INSTRUMENTS.panFlute?.[index];
+        pipe.setAttribute('role', 'button');
+        pipe.setAttribute('tabindex', '0');
+        pipe.setAttribute('aria-label', `Pan flute pipe ${index + 1}, note ${note?.note || ''}, ${note?.frequency || ''} hertz`);
+
         pipe.addEventListener('mousedown', () => playPanFlutePipe(index));
         pipe.addEventListener('touchstart', (e) => {
             e.preventDefault();
             playPanFlutePipe(index);
+        });
+        pipe.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playPanFlutePipe(index);
+            }
         });
     });
 }
@@ -195,16 +309,22 @@ function playDidgeridoo() {
 }
 
 function playPanFlutePipe(index) {
-    const note = INSTRUMENTS.panFlute[index];
+    const note = INSTRUMENTS.panFlute?.[index];
+    if (!note) return;
+
     const style = playStyles.wind;
-    const pipe = document.querySelectorAll('.pipe')[index];
+    const pipes = document.querySelectorAll('.pipe');
+    const pipe = pipes[index];
+    if (!pipe) return;
 
     pipe.classList.add('playing');
+    pipe.setAttribute('aria-pressed', 'true');
     window.audioEngine.playPanFlute(note.frequency, style);
 
     setTimeout(() => {
         pipe.classList.remove('playing');
-    }, 1000);
+        pipe.setAttribute('aria-pressed', 'false');
+    }, AUDIO_DURATIONS.panflute);
 }
 
 // Handpans
@@ -214,16 +334,33 @@ function renderHandpans() {
 }
 
 function renderHandpan(handpanId, config) {
+    if (!config) return;
+
     const notesContainer = document.getElementById(`${handpanId}Notes`);
+    if (!notesContainer) return;
     notesContainer.innerHTML = '';
 
+    const handpanClass = handpanId === 'handpan1' ? 'handpan-1' : 'handpan-2';
+
     // Setup ding (center)
-    const ding = document.querySelector(`.${handpanId === 'handpan1' ? 'handpan-1' : 'handpan-2'} .handpan-ding`);
-    ding.addEventListener('mousedown', () => playHandpanNote(handpanId, config.ding.frequency, true));
-    ding.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        playHandpanNote(handpanId, config.ding.frequency, true);
-    });
+    const ding = document.querySelector(`.${handpanClass} .handpan-ding`);
+    if (ding) {
+        ding.setAttribute('role', 'button');
+        ding.setAttribute('tabindex', '0');
+        ding.setAttribute('aria-label', `Handpan ${config.name} center ding, note ${config.ding.note}, ${config.ding.frequency} hertz`);
+
+        ding.addEventListener('mousedown', () => playHandpanNote(handpanId, config.ding.frequency, true));
+        ding.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            playHandpanNote(handpanId, config.ding.frequency, true);
+        });
+        ding.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playHandpanNote(handpanId, config.ding.frequency, true);
+            }
+        });
+    }
 
     // Create outer notes
     const radius = 70; // Distance from center
@@ -231,6 +368,11 @@ function renderHandpan(handpanId, config) {
         const noteEl = document.createElement('div');
         noteEl.className = 'handpan-note';
         noteEl.dataset.note = note.note;
+
+        // Accessibility
+        noteEl.setAttribute('role', 'button');
+        noteEl.setAttribute('tabindex', '0');
+        noteEl.setAttribute('aria-label', `Handpan ${config.name} note ${note.note}, ${note.frequency} hertz`);
 
         // Position in circle
         const angle = (note.angle - 90) * (Math.PI / 180);
@@ -245,6 +387,12 @@ function renderHandpan(handpanId, config) {
             e.preventDefault();
             playHandpanNote(handpanId, note.frequency, false);
         });
+        noteEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playHandpanNote(handpanId, note.frequency, false);
+            }
+        });
 
         notesContainer.appendChild(noteEl);
     });
@@ -252,16 +400,18 @@ function renderHandpan(handpanId, config) {
 
 function playHandpanNote(handpanId, frequency, isDing) {
     const style = playStyles.handpan;
-    const selector = isDing
-        ? `.${handpanId === 'handpan1' ? 'handpan-1' : 'handpan-2'} .handpan-ding`
-        : `.${handpanId === 'handpan1' ? 'handpan-1' : 'handpan-2'} .handpan-note[data-frequency="${frequency}"]`;
+    const handpanClass = handpanId === 'handpan1' ? 'handpan-1' : 'handpan-2';
 
     // Find the note element
-    const noteEls = document.querySelectorAll(`.${handpanId === 'handpan1' ? 'handpan-1' : 'handpan-2'} ${isDing ? '.handpan-ding' : '.handpan-note'}`);
+    const noteEls = document.querySelectorAll(`.${handpanClass} ${isDing ? '.handpan-ding' : '.handpan-note'}`);
 
-    if (isDing) {
+    if (isDing && noteEls.length > 0) {
         noteEls[0].classList.add('playing');
-        setTimeout(() => noteEls[0].classList.remove('playing'), 300);
+        noteEls[0].setAttribute('aria-pressed', 'true');
+        setTimeout(() => {
+            noteEls[0].classList.remove('playing');
+            noteEls[0].setAttribute('aria-pressed', 'false');
+        }, AUDIO_DURATIONS.handpan);
     }
 
     window.audioEngine.playHandpan(frequency, style);
@@ -276,11 +426,13 @@ function setupPlayStyleButtons() {
             const group = btn.dataset.group;
             const style = btn.dataset.style;
 
-            // Update active state
+            // Update active state and aria-pressed
             document.querySelectorAll(`.style-btn[data-group="${group}"]`).forEach(b => {
                 b.classList.remove('active');
+                b.setAttribute('aria-pressed', 'false');
             });
             btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
 
             // Update play style
             playStyles[group] = style;
@@ -292,37 +444,58 @@ function setupPlayStyleButtons() {
 function initializeControls() {
     // Master volume
     const volumeSlider = document.getElementById('masterVolume');
-    volumeSlider.addEventListener('input', (e) => {
-        const value = e.target.value / 100;
-        window.audioEngine.setMasterVolume(value);
-    });
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+            const value = e.target.value / 100;
+            window.audioEngine.setMasterVolume(value);
+        });
+    }
 
     // Fullscreen
     const fullscreenBtn = document.getElementById('fullscreenBtn');
-    fullscreenBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-        } else {
-            document.exitFullscreen();
-        }
-    });
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    }
 
-    // Ambient toggle (placeholder for ambient sounds)
+    // Ambient toggle (ocean waves)
     const ambientBtn = document.getElementById('ambientToggle');
-    ambientBtn.addEventListener('click', () => {
-        ambientBtn.classList.toggle('active');
-    });
+    if (ambientBtn) {
+        ambientBtn.addEventListener('click', () => {
+            const isPlaying = window.audioEngine.toggleAmbient();
+            ambientBtn.classList.toggle('active', isPlaying);
+            ambientBtn.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+        });
+    }
 }
 
 // Visualizer
 function initializeVisualizer() {
     const canvas = document.getElementById('visualizerCanvas');
     const ctx = canvas.getContext('2d');
+    let gradient = null;
+    let lastHeight = 0;
+
+    function createGradient(height) {
+        const g = ctx.createLinearGradient(0, height, 0, 0);
+        g.addColorStop(0, '#d4af37');
+        g.addColorStop(0.5, '#7b68ee');
+        g.addColorStop(1, '#20b2aa');
+        return g;
+    }
 
     function resizeCanvas() {
         canvas.width = canvas.offsetWidth * window.devicePixelRatio;
         canvas.height = canvas.offsetHeight * window.devicePixelRatio;
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // Recreate gradient on resize
+        lastHeight = canvas.offsetHeight;
+        gradient = createGradient(lastHeight);
     }
 
     resizeCanvas();
@@ -331,6 +504,12 @@ function initializeVisualizer() {
     function draw() {
         const width = canvas.offsetWidth;
         const height = canvas.offsetHeight;
+
+        // Recreate gradient only if height changed
+        if (height !== lastHeight) {
+            lastHeight = height;
+            gradient = createGradient(height);
+        }
 
         ctx.clearRect(0, 0, width, height);
 
@@ -342,10 +521,6 @@ function initializeVisualizer() {
 
         const barCount = 64;
         const barWidth = width / barCount;
-        const gradient = ctx.createLinearGradient(0, height, 0, 0);
-        gradient.addColorStop(0, '#d4af37');
-        gradient.addColorStop(0.5, '#7b68ee');
-        gradient.addColorStop(1, '#20b2aa');
 
         ctx.fillStyle = gradient;
 
